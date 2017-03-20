@@ -7,6 +7,11 @@ def double_depth_copy(dl):
 		c.append(list(row))
 	return c
 
+def looks_like(a, b, neutral):
+	for i in range(0, len(a)):
+		if (a[i] != neutral or b[i] != neutral) and a[i] != b[i]:
+			return False
+	return True
 
 class Binoxxo:
 	def __init__(self, size):
@@ -20,9 +25,9 @@ class Binoxxo:
 		return self._size
 
 	def at(self, i, j):
-		if (i < 0 or j < 0 or i >= self._size or j >= self._size):
-			return '!'
-		return self._matrix[i][j]
+		if 0 <= i < self.size() and 0 <= j < self.size():
+			return self._matrix[i][j]
+		return '!'
 
 	def get_row(self, i):
 		return self._matrix[i]
@@ -59,11 +64,11 @@ class Binoxxo:
 		:param val: the value to insert into the binoxxo
 		:return: True or False, wether the move is correct or not for the rule °1
 		"""
-		down = not (val == self.at(i + 1, j) and val == self.at(i + 2, j))
-		up = not (val == self.at(i - 1, j) and val == self.at(i - 2, j))
-		right = not (val == self.at(i, j + 1) and val == self.at(i, j + 2))
-		left = not (val == self.at(i, j - 1) and val == self.at(i, j - 2))
-		return down and up and right and left
+
+		return not (val == self.at(i + 1, j) and val == self.at(i + 2, j)) and \
+		       not (val == self.at(i - 1, j) and val == self.at(i - 2, j)) and \
+		       not (val == self.at(i, j + 1) and val == self.at(i, j + 2)) and \
+		       not (val == self.at(i, j - 1) and val == self.at(i, j - 2))
 
 	def rule2(self, i, j, val):
 		"""
@@ -74,8 +79,8 @@ class Binoxxo:
 		:param val: the value to insert into the binoxxo
 		:return: True or False, wether the move is correct or not for the rule °2
 		"""
-		return self.get_row(i).count(val) + 1 <= self.size() / 2 and self.get_column(j).count(
-			val) + 1 <= self.size() / 2
+		return self.get_row(i).count(val) + 1 <= self.size() / 2 and \
+		       self.get_column(j).count(val) + 1 <= self.size() / 2
 
 	def rule3(self, i, j, val):
 		"""
@@ -110,10 +115,8 @@ class Binoxxo:
 
 		if self.at(i, j) != ' ':
 			return False
-		r1 = self.rule1(i, j, val)
-		r2 = self.rule2(i, j, val)
-		r3 = self.rule3(i, j, val)
-		return r1 and r2 and r3
+
+		return self.rule1(i, j, val) and self.rule2(i, j, val) and self.rule3(i, j, val)
 
 	def __str__(self):
 		# rep = ((2 * self.size() + 1) * "-") + "\n"
@@ -144,18 +147,24 @@ class Binoxxo:
 		return possibilities
 
 	def is_viable(self):
-		almost_complete_rows = []
-		almost_complete_cols = []
 		for x in range(0, self.size()):
 			rowx = self.get_row(x)
 			colx = self.get_column(x)
-			if (rowx.count('x') + rowx.count('o') == self.size() - 1):
-				almost_complete_rows.append((x, rowx.index(' '), 'x' if rowx.count('x') < rowx.count('o') else 'o'))
-			if (colx.count('x') + colx.count('o') == self.size() - 1):
-				almost_complete_cols.append((colx.index(' '), x, 'x' if colx.count('x') < colx.count('o') else 'o'))
-		if len(almost_complete_rows) != len(set(almost_complete_rows)) or len(almost_complete_cols) != len(set(almost_complete_cols)):
-			return False
-		for (i, j, val) in almost_complete_rows:
-			if not self.rule3(i, j, val):
-				return False
+
+			if rowx.count(' ') == 1:
+				if not self.check(x, rowx.index(' '), 'x' if rowx.count('x') < rowx.count('o') else 'o'):
+					return False
+			if rowx.count('x') == self.size()/2:
+				for y in range(0, self.size()):
+					if x != y and looks_like(rowx, self.get_row(y), '_'):
+						return False
+
+			if colx.count(' ') == 1:
+				if not self.check(colx.index(' '), x, 'x' if colx.count('x') < colx.count('o') else 'o'):
+					return False
+			if colx.count('x') == self.size() / 2:
+				for y in range(0, self.size()):
+					if x != y and looks_like(colx, self.get_column(y), '_'):
+						return False
 		return True
+
