@@ -4,6 +4,7 @@ import time
 size = 10
 
 b = Binoxxo(size)
+
 start = time.time()
 
 n = 0
@@ -15,7 +16,9 @@ def backtracking_generator(binoxxo):
 		print(binoxxo)
 		return True
 	for b in binoxxo.get_possible_next_moves():
-		if b.is_viable() and backtracking_generator(b):
+		if not b.is_viable():
+			return False
+		if backtracking_generator(b):
 			return True
 	return False
 

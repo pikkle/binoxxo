@@ -19,6 +19,7 @@ class Binoxxo:
 			raise AttributeError("Binoxxo should be an even size matrix")
 		self._size = size
 		self._matrix = [[' ' for x in range(0, size)] for x in range(0, size)]
+		self._matrixT = [[' ' for x in range(0, size)] for x in range(0, size)]
 		self._history = []
 
 	def size(self):
@@ -33,7 +34,7 @@ class Binoxxo:
 		return self._matrix[i]
 
 	def get_column(self, j):
-		return [row[j] for row in self._matrix]
+		return self._matrixT[j]
 
 	def set(self, i, j, val):
 		if (val not in ['x', 'o']):
@@ -46,6 +47,8 @@ class Binoxxo:
 		b = Binoxxo(self._size)
 		b._matrix = double_depth_copy(self._matrix)
 		b._matrix[i][j] = val
+		b._matrixT = double_depth_copy(self._matrixT)
+		b._matrixT[j][i] = val
 		b._history = list(self._history)
 		b._history.append(self)
 		return b
@@ -115,7 +118,7 @@ class Binoxxo:
 
 		if self.at(i, j) != ' ':
 			return False
-
+		# TODO: check r2 and r3 only when completing a line
 		return self.rule1(i, j, val) and self.rule2(i, j, val) and self.rule3(i, j, val)
 
 	def __str__(self):
