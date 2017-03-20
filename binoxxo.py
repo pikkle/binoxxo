@@ -1,9 +1,20 @@
+from copy import deepcopy
+
+
+def double_depth_copy(dl):
+	c = []
+	for row in dl:
+		c.append(list(row))
+	return c
+
+
 class Binoxxo:
 	def __init__(self, size):
 		if (size % 2 != 0):
 			raise AttributeError("Binoxxo should be an even size matrix")
 		self._size = size
 		self._matrix = [[' ' for x in range(0, size)] for x in range(0, size)]
+		self._history = []
 
 	def size(self):
 		return self._size
@@ -26,7 +37,18 @@ class Binoxxo:
 			raise AssertionError("(i, j) is not in the matrix")
 		if (not self.check(i, j, val)):
 			raise AssertionError("move is not valid !")
-		self._matrix[i][j] = val
+
+		b = Binoxxo(self._size)
+		b._matrix = double_depth_copy(self._matrix)
+		b._matrix[i][j] = val
+		b._history = list(self._history)
+		b._history.append(self)
+		return b
+
+	def revert(self):
+		if not self._history:
+			raise AssertionError("history is empty, no previous state exist")
+		return self._history.pop()
 
 	def rule1(self, i, j, val):
 		"""
@@ -87,20 +109,21 @@ class Binoxxo:
 		"""
 
 		if self.at(i, j) != ' ':
-			raise AssertionError("Binoxxo already has a value in ({}, {})".format(i, j))
-
+			return False
 		r1 = self.rule1(i, j, val)
 		r2 = self.rule2(i, j, val)
 		r3 = self.rule3(i, j, val)
 		return r1 and r2 and r3
 
 	def __str__(self):
-		rep = ((2 * self.size() + 1) * "-") + "\n"
+		# rep = ((2 * self.size() + 1) * "-") + "\n"
+		rep = ""
 		for row in self._matrix:
-			rep += '|'
+			# rep += '|'
 			for elem in row:
-				rep += elem + '|'
-			rep += "\n" + ((2 * self.size() + 1) * "-") + "\n"
+				rep += elem
+			rep += "\n"
+			# rep += "\n" + ((2 * self.size() + 1) * "-") + "\n"
 		return rep
 
 	def is_complete(self):
@@ -109,10 +132,30 @@ class Binoxxo:
 				return False
 		return True
 
-	def get_empty_spots(self):
-		empty_spots = []
+	def get_possible_next_moves(self):
+		possibilities = []
 		for i in range(0, self._size):
 			for j in range(0, self._size):
-				if (self._matrix[i][j] == ' '):
-					empty_spots += [(i, j)]
-		return empty_spots
+				for val in ['x', 'o']:
+					if self.check(i, j, val):
+						possibilities.append(self.set(i, j, val))
+				if len(possibilities):
+					return possibilities
+		return possibilities
+
+	def is_viable(self):
+		almost_complete_rows = []
+		almost_complete_cols = []
+		for x in range(0, self.size()):
+			rowx = self.get_row(x)
+			colx = self.get_column(x)
+			if (rowx.count('x') + rowx.count('o') == self.size() - 1):
+				almost_complete_rows.append((x, rowx.index(' '), 'x' if rowx.count('x') < rowx.count('o') else 'o'))
+			if (colx.count('x') + colx.count('o') == self.size() - 1):
+				almost_complete_cols.append((colx.index(' '), x, 'x' if colx.count('x') < colx.count('o') else 'o'))
+		if len(almost_complete_rows) != len(set(almost_complete_rows)) or len(almost_complete_cols) != len(set(almost_complete_cols)):
+			return False
+		for (i, j, val) in almost_complete_rows:
+			if not self.rule3(i, j, val):
+				return False
+		return True
