@@ -1,13 +1,10 @@
-from copy import deepcopy
-
-
 def double_depth_copy(dl):
 	c = []
 	for row in dl:
 		c.append(list(row))
 	return c
 
-def looks_like(a, b, neutral):
+def looks_like(a, b, neutral=' '):
 	for i in range(0, len(a)):
 		if (a[i] != neutral or b[i] != neutral) and a[i] != b[i]:
 			return False
@@ -26,7 +23,7 @@ class Binoxxo:
 		return self._size
 
 	def at(self, i, j):
-		if 0 <= i < self.size() and 0 <= j < self.size():
+		if 0 <= i < self._size and 0 <= j < self._size:
 			return self._matrix[i][j]
 		return '!'
 
@@ -44,6 +41,16 @@ class Binoxxo:
 		if (not self.check(i, j, val)):
 			raise AssertionError("move is not valid !")
 
+		b = Binoxxo(self._size)
+		b._matrix = double_depth_copy(self._matrix)
+		b._matrix[i][j] = val
+		b._matrixT = double_depth_copy(self._matrixT)
+		b._matrixT[j][i] = val
+		b._history = list(self._history)
+		b._history.append(self)
+		return b
+
+	def securedSet(self, i, j, val):
 		b = Binoxxo(self._size)
 		b._matrix = double_depth_copy(self._matrix)
 		b._matrix[i][j] = val
@@ -82,8 +89,8 @@ class Binoxxo:
 		:param val: the value to insert into the binoxxo
 		:return: True or False, wether the move is correct or not for the rule °2
 		"""
-		return self.get_row(i).count(val) + 1 <= self.size() / 2 and \
-		       self.get_column(j).count(val) + 1 <= self.size() / 2
+		return self.get_row(i).count(val) + 1 <= self._size / 2 and \
+		       self.get_column(j).count(val) + 1 <= self._size / 2
 
 	def rule3(self, i, j, val):
 		"""
@@ -99,7 +106,7 @@ class Binoxxo:
 		col = self.get_column(j).copy()
 		col[i] = val
 
-		for x in range(0, self.size()):
+		for x in range(0, self._size):
 			rowx = self.get_row(x)
 			colx = self.get_column(x)
 			if ((x != i and rowx == row and ' ' not in rowx) or (x != j and colx == col and ' ' not in colx)):
@@ -118,18 +125,17 @@ class Binoxxo:
 
 		if self.at(i, j) != ' ':
 			return False
-		# TODO: check r2 and r3 only when completing a line
 		return self.rule1(i, j, val) and self.rule2(i, j, val) and self.rule3(i, j, val)
 
 	def __str__(self):
-		# rep = ((2 * self.size() + 1) * "-") + "\n"
+		# rep = ((2 * self._size + 1) * "-") + "\n"
 		rep = ""
 		for row in self._matrix:
 			# rep += '|'
 			for elem in row:
 				rep += elem
 			rep += "\n"
-			# rep += "\n" + ((2 * self.size() + 1) * "-") + "\n"
+			# rep += "\n" + ((2 * self._size + 1) * "-") + "\n"
 		return rep
 
 	def is_complete(self):
@@ -144,30 +150,30 @@ class Binoxxo:
 			for j in range(0, self._size):
 				for val in ['x', 'o']:
 					if self.check(i, j, val):
-						possibilities.append(self.set(i, j, val))
+						possibilities.append(self.securedSet(i, j, val))
 				if len(possibilities):
 					return possibilities
 		return possibilities
 
 	def is_viable(self):
-		for x in range(0, self.size()):
+		for x in range(0, self._size):
 			rowx = self.get_row(x)
 			colx = self.get_column(x)
 
 			if rowx.count(' ') == 1:
 				if not self.check(x, rowx.index(' '), 'x' if rowx.count('x') < rowx.count('o') else 'o'):
 					return False
-			if rowx.count('x') == self.size()/2:
-				for y in range(0, self.size()):
-					if x != y and looks_like(rowx, self.get_row(y), '_'):
+			if rowx.count('x') == self._size/2:
+				for y in range(0, self._size):
+					if x != y and looks_like(rowx, self.get_row(y)):
 						return False
 
 			if colx.count(' ') == 1:
 				if not self.check(colx.index(' '), x, 'x' if colx.count('x') < colx.count('o') else 'o'):
 					return False
-			if colx.count('x') == self.size() / 2:
-				for y in range(0, self.size()):
-					if x != y and looks_like(colx, self.get_column(y), '_'):
+			if colx.count('x') == self._size / 2:
+				for y in range(0, self._size):
+					if x != y and looks_like(colx, self.get_column(y)):
 						return False
 		return True
 
